@@ -1,15 +1,49 @@
 #include "RisingTides.h"
 using namespace std;
 
+#include "grid.h"
+#include "vector.h"
+#include "queue.h"
+#include "gridlocation.h"
+
 Grid<bool> floodedRegionsIn(const Grid<double>& terrain,
                             const Vector<GridLocation>& sources,
                             double height) {
-    /* TODO: Delete this line and the next four lines, then implement this function. */
-    (void) terrain;
-    (void) sources;
-    (void) height;
-    return {};
+    int rows = terrain.numRows();
+    int cols = terrain.numCols();
+    Grid<bool> flooded(rows, cols, false);
+    Queue<GridLocation> toVisit;
+
+    // Initialize queue with valid source locations
+    for (const GridLocation& source : sources) {
+        if (terrain.inBounds(source.row, source.col) && terrain[source.row][source.col] <= height) {
+            flooded[source.row][source.col] = true;
+            toVisit.enqueue(source);
+        }
+    }
+
+    // Directions for moving up, down, left, right
+    const Vector<GridLocation> directions = {
+        { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 }
+    };
+
+    // BFS traversal
+    while (!toVisit.isEmpty()) {
+        GridLocation curr = toVisit.dequeue();
+        for (const GridLocation& dir : directions) {
+            GridLocation next = { curr.row + dir.row, curr.col + dir.col };
+            if (terrain.inBounds(next.row, next.col) &&
+                !flooded[next.row][next.col] &&
+                terrain[next.row][next.col] <= height) {
+                flooded[next.row][next.col] = true;
+                toVisit.enqueue(next);
+            }
+        }
+    }
+
+    return flooded;
 }
+
 
 
 

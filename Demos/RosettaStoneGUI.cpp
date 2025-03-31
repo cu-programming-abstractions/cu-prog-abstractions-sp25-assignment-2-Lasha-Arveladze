@@ -74,7 +74,7 @@ namespace {
 
     void RosettaStoneGUI::settingUp() {
         *console_ << "Loading language data... " << endl;
-        for (string file: listDirectory(kBaseDir)) {
+        for (const string& file: listDirectory(kBaseDir)) {
             if (!endsWith(file, ".3grams")) continue;
 
             string language = file.substr(0, file.find('.'));

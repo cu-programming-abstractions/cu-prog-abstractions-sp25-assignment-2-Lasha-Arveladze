@@ -1,50 +1,111 @@
 #include "RosettaStone.h"
 #include "GUI/SimpleTest.h"
+#include "strlib.h"
+#include "simpio.h"
+#include "priorityqueue.h"
+#include "vector.h"
+#include <error.h>
+#include "set.h"
+#include <string>
+#include <cmath>
 using namespace std;
 
 Map<string, double> kGramsIn(const string& str, int kGramLength) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) str;
-    (void) kGramLength;
-    return {};
+    // Checking the Invalid Conditions
+    if (kGramLength == 0 || kGramLength <= 0) {
+      error("provided integer is not valid");
+    } else if (str.length() < kGramLength) {
+        return {};
+    }
+
+    // if the conditions are right then do this
+    Map<string, double> wordCounter;
+
+    for(int i = 0; i + kGramLength <= str.length(); i++) {
+        string word = str.substr(i, kGramLength);
+         wordCounter[word] += 1;
+    }
+    return wordCounter;
 }
 
 Map<string, double> normalize(const Map<string, double>& input) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) input;
-    return {};
+    Vector<double> values = input.values();
+    values.sort();
+    if(input.isEmpty() || values[0] == 0) {
+        error("Error occured, check the input");
+    }
+    double num = 0;
+    for (int i = 0; i < values.size(); i++) {
+        num += pow(values[i], 2);
+    }
+    num = sqrt(num);
+
+    Map<string, double> changedmap;
+    input.mapAll([&changedmap, num](const string key, double value) {
+        changedmap.put(key, value / num);
+    });
+    return changedmap;
 }
 
 Map<string, double> topKGramsIn(const Map<string, double>& source, int numToKeep) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) source;
-    (void) numToKeep;
-    return {};
+    if(numToKeep > source.size()) {
+        return source;
+    }else if(numToKeep == 0) {
+        return {};
+    }else if(numToKeep < 0) {
+        error("Inavlid Argument");
+    }
+
+    PriorityQueue<string> obj;
+
+    for(string key : source) {
+        obj.enqueue(key, source[key]);
+    }
+
+    while(obj.size() != numToKeep && !obj.isEmpty()) {
+        obj.dequeue();
+    }
+
+    Map<string, double> finalObject;
+    for(int i = 0 ;  i < numToKeep; i++) {
+        double value = obj.peekPriority();
+        string key = obj.dequeue();
+
+        finalObject.put(key, value);
+    }
+
+    return finalObject;
 }
 
 double cosineSimilarityOf(const Map<string, double>& lhs, const Map<string, double>& rhs) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) lhs;
-    (void) rhs;
-    return {};
+    Vector<string> key1 = lhs.keys();
+    double number = 0;
+    for(int i = 0; i < lhs.size(); i++) {
+        if(rhs.containsKey(key1[i])) {
+            number += rhs.get(key1[i]) * lhs.get(key1[i]);
+        }
+    }
+    return number;
 }
+
 
 string guessLanguageOf(const Map<string, double>& textProfile,
                        const Set<Corpus>& corpora) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) textProfile;
-    (void) corpora;
-    return "";
+    if (corpora.isEmpty()) {
+        error("There aren’t any languages to pick from");
+    }
+
+    PriorityQueue<string> priorityTable;
+    for(Corpus corporaItem : corpora) {
+        double similarity = cosineSimilarityOf(corporaItem.profile, textProfile);
+        priorityTable.enqueue(corporaItem.name, similarity);
+    }
+
+    while(priorityTable.size() != 1) {
+        priorityTable.dequeue();
+    }
+
+    return priorityTable.peek();
 }
 
 
